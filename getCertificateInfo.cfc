@@ -1,17 +1,31 @@
 <cfcomponent>
-	<cffunction name="getAllCertificateData" output="false" >
+	<cffunction name="getAllCertificateData" output="true" >
 		<cfargument name="URL" required="yes" type="string" >
-		<cfargument name="port" required="yes" type="numeric" >  
+		<cfargument name="port" required="yes" type="numeric" >  	
+
 		<cfscript>
-		        port = port;
-		        hostname = "#URL#";
-		        factory = createObject('java', 'javax.net.ssl.HttpsURLConnection').getDefaultSSLSocketFactory();
-		        socket = factory.createSocket(hostname, port);
-		        socket.startHandshake();
-		        serverCerts = socket.getSession().getPeerCertificates();
-		        socket.close();
-				serverCertsArray=ArrayNew(1);
+			URL = lcase(trim(URL));
+			URL = Replace(URL, 'https://', '');
+			URL = Replace(URL, 'http://', '');
 		</cfscript>
+
+		<cftry> 
+			<cfscript>
+			        port = port;
+			        hostname = "#URL#";
+			        factory = createObject('java', 'javax.net.ssl.HttpsURLConnection').getDefaultSSLSocketFactory();
+			        socket = factory.createSocket(hostname, port);
+			        socket.startHandshake();
+			        serverCerts = socket.getSession().getPeerCertificates();
+			        socket.close();
+					serverCertsArray=ArrayNew(1);
+			</cfscript>
+			<cfcatch type="any">
+				<cfreturn ('ERROR: ' & cfcatch.message)>
+			</cfcatch>
+		</cftry>
+
+
 		
 		<cfloop from="1" to="#ArrayLen(serverCerts)#" index="i">
 			<cfset tempstruct=StructNew("Ordered")>
@@ -32,8 +46,11 @@
 				StructInsert(tempstruct,"IssuerDN_toString", serverCerts[i].getIssuerDN().toString() );
 				serverCertsArray[i] = tempstruct;
 			</cfscript>
-
 		</cfloop>
+
+ 
+
+
 		<cfreturn (serverCertsArray)>		
 	</cffunction>
 </cfcomponent>
